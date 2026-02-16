@@ -6,9 +6,11 @@ engine = create_async_engine(
     settings.DATABASE_URL,
     echo=False,
     future=True,
+    pool_pre_ping=True,
     connect_args={
-        "server_settings": {"timezone": "UTC"},
-        "statement_cache_size": 0
+        "statement_cache_size": 0,
+        "prepared_statement_cache_size": 0,
+        "server_settings": {"jit": "off"}
     }
 )
 

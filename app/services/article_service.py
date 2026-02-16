@@ -1,0 +1,134 @@
+from typing import List, Optional
+from sqlalchemy.ext.asyncio import AsyncSession
+from uuid import UUID
+from fastapi import HTTPException, status
+
+from app.models.article import Article, ArticleStatus
+from app.schemas.article import ArticleCreate, ArticleUpdate, ArticleResponse, ArticleWithAuthor
+from app.repositories.article import article_repo
+
+
+async def create_article(
+    db: AsyncSession, 
+    article_in: ArticleCreate, 
+    author_id: UUID
+) -> ArticleResponse:
+    article = await article_repo.create_article(db, article_in, author_id)
+    return ArticleResponse.model_validate(article)
+
+
+async def get_article(db: AsyncSession, article_id: UUID) -> ArticleWithAuthor:
+    article = await article_repo.get_by_id(db, article_id)
+    if not article:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Article not found"
+        )
+    
+    return ArticleWithAuthor(
+        id=article.id,
+        author_id=article.author_id,
+        title=article.title,
+        body=article.body,
+        image_path=article.image_path,
+        image_alt_text=article.image_alt_text,
+        status=article.status,
+        created_at=article.created_at,
+        updated_at=article.updated_at,
+        approved_at=article.approved_at,
+        archived_at=article.archived_at,
+        author_first_name=article.author.first_name,
+        author_last_name=article.author.last_name,
+        author_email=article.author.email
+    )
+
+
+async def get_all_articles(db: AsyncSession) -> List[ArticleWithAuthor]:
+    articles = await article_repo.get_all_with_author(db)
+    return [
+        ArticleWithAuthor(
+            id=article.id,
+            author_id=article.author_id,
+            title=article.title,
+            body=article.body,
+            image_path=article.image_path,
+            image_alt_text=article.image_alt_text,
+            status=article.status,
+            created_at=article.created_at,
+            updated_at=article.updated_at,
+            approved_at=article.approved_at,
+            archived_at=article.archived_at,
+            author_first_name=article.author.first_name,
+            author_last_name=article.author.last_name,
+            author_email=article.author.email
+        )
+        for article in articles
+    ]
+
+
+async def get_my_articles(db: AsyncSession, author_id: UUID) -> List[ArticleWithAuthor]:
+    articles = await article_repo.get_by_author(db, author_id)
+    return [
+        ArticleWithAuthor(
+            id=article.id,
+            author_id=article.author_id,
+            title=article.title,
+            body=article.body,
+            image_path=article.image_path,
+            image_alt_text=article.image_alt_text,
+            status=article.status,
+            created_at=article.created_at,
+            updated_at=article.updated_at,
+            approved_at=article.approved_at,
+            archived_at=article.archived_at,
+            author_first_name=article.author.first_name,
+            author_last_name=article.author.last_name,
+            author_email=article.author.email
+        )
+        for article in articles
+    ]
+
+
+async def update_article(
+    db: AsyncSession, 
+    article_id: UUID, 
+    article_in: ArticleUpdate,
+    user_id: UUID
+) -> ArticleResponse:
+    # Check if article exists
+    existing_article = await article_repo.get_by_id(db, article_id)
+    if not existing_article:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Article not found"
+        )
+    
+    # Check if user is the author
+    if existing_article.author_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to update this article"
+        )
+    
+    article = await article_repo.update_article(db, article_id, article_in)
+    return ArticleResponse.model_validate(article)
+
+
+async def delete_article(db: AsyncSession, article_id: UUID, user_id: UUID) -> dict:
+    # Check if article exists
+    existing_article = await article_repo.get_by_id(db, article_id)
+    if not existing_article:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Article not found"
+        )
+    
+    # Check if user is the author
+    if existing_article.author_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to delete this article"
+        )
+    
+    await article_repo.delete_article(db, article_id)
+    return {"message": "Article deleted successfully"}
