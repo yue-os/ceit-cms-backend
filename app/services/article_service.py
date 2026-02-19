@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import HTTPException, status
 
 from app.schemas.article import ArticleCreate, ArticleUpdate, ArticleResponse, ArticleWithAuthor
-from app.schemas.auth import TokenData
+from app.api.v1.dependencies import CurrentUser
 from app.repositories.article import article_repo
 from app.core.authz import ensure_same_department_or_superadmin
 
@@ -94,7 +94,7 @@ async def update_article(
     db: AsyncSession, 
     article_id: UUID, 
     article_in: ArticleUpdate,
-    current_user: TokenData
+    current_user: CurrentUser
 ) -> ArticleResponse:
     # Check if article exists
     existing_article = await article_repo.get_by_id(db, article_id)
@@ -111,7 +111,7 @@ async def update_article(
     return ArticleResponse.model_validate(article)
 
 
-async def delete_article(db: AsyncSession, article_id: UUID, current_user: TokenData) -> dict:
+async def delete_article(db: AsyncSession, article_id: UUID, current_user: CurrentUser) -> dict:
     # Check if article exists
     existing_article = await article_repo.get_by_id(db, article_id)
     if not existing_article:

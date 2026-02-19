@@ -5,7 +5,7 @@ from datetime import timedelta, datetime, timezone
 from app.core.config import settings
 from app.models import User
 from app.schemas import Token, TokenData
-from app.repositories import user_crud
+from app.repositories import user_repo
 from jose import jwt, JWTError
 from uuid import UUID
 
@@ -77,7 +77,7 @@ class AuthService:
         if not user_id:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
 
-        user = await user_crud.get_by_id(db=db, user_id=UUID(user_id))
+        user = await user_repo.get_by_id(db=db, user_id=UUID(user_id))
         if not user:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
 

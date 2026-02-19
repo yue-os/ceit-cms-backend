@@ -1,5 +1,8 @@
 from fastapi import HTTPException, status
-from app.schemas.auth import TokenData
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.api.v1.dependencies import CurrentUser
 
 
 def get_department_from_role(role_name: str) -> str | None:
@@ -10,7 +13,7 @@ def get_department_from_role(role_name: str) -> str | None:
     return None
 
 
-def ensure_same_department_or_superadmin(current_user: TokenData, target_role_name: str | None) -> None:
+def ensure_same_department_or_superadmin(current_user: "CurrentUser", target_role_name: str | None) -> None:
     if current_user.role_name == "super_admin":
         return
 
